@@ -1,12 +1,13 @@
 # Aerial Landscape Images Classification
 
-## Advanced Method Development
-
 ### 📌 Overview
-This is the **Advanced Method Development** section of our SkyView aerial image classification project. The goal is to leverage recent advances in pretraining, multimodal learning, and representation learning to build explainable and transferable systems.
+This is the SkyView aerial image classification project. The goal is to leverage recent advances in pretraining, multimodal learning, and representation learning to build explainable and transferable systems. And also compare with traditional methods like ResNet and ML methods.
 
-This section includes:
+Including:
 
+- **Traditional machine learning models**
+- **Resnet**
+- **ViT**
 - **Zero-shot classification using CLIP**, which aligns images and natural language prompts.
 - **CLIP fine-tuning using RSICD**, a captioned remote sensing dataset, to enhance domain alignment.
 - **Linear probing with DINOv2 and BigEarthNet-pretrained ViT**, to assess feature quality for remote sensing imagery.
@@ -25,12 +26,12 @@ All experiments are built around the SkyView dataset, and results from this sect
 #### 2. RSICD (for CLIP Fine-tuning)
 - Each image annotated with 5 natural language captions
 - Enables training vision-language models on remote sensing images
-- [RSICD Website]([https://captain-whu.github.io/RSICD-dataset](https://github.com/201528014227051/RSICD_optimal))
+- [RSICD Dataset](https://github.com/201528014227051/RSICD_optimal)
 
 #### 3. BigEarthNet v2.0 (for DINOv2 Finetuneing)
 - Over 500k Sentinel-2 image patches
 - High semantic overlap with SkyView classes
-- [BigEarthNet](https://bigearth.net)
+- [BigEarthNet Website](https://bigearth.net)
 
 ---
 
@@ -58,12 +59,13 @@ All experiments are built around the SkyView dataset, and results from this sect
 
 ### 🔬 Experiments & Results
 
-| Model                      | Fine-tuned? | Method            | Accuracy (SkyView) |
-|----------------------------|-------------|-------------------|---------------------|
-| CLIP (ViT-B/32)            | ❌ No       | Zero-shot         | TBD                 |
-| CLIP (Fine-tuned w/ RSICD) | ✅ Yes      | Zero-shot         | TBD                 |
-| ViT (BigEarthNet-S2)       | ❌ No       | Linear probing     | TBD                 |
-| DINOv2 (Fine-tuned w/ BigEarthNet-S2)  | ✅ Yes       | Linear probing     | TBD                 |
+
+| Model                                 | Fine-tuned? | Method         | Acc@1 | Acc@3 | Acc@5 | Precision | Recall | F1    |
+| ------------------------------------- | ----------- | -------------- | ----- | ----- | ----- | --------- | ------ | ----- |
+| CLIP (ViT-B/32)                       | ❌ No        | Zero-shot      | 78.44 | 94.91 | 98.66 | 80.85     | 78.44  | 77.33 |
+| CLIP (Fine-tuned w/ RSICD)            | ✅ Yes       | Zero-shot      | TBD   |       |       |           |        |       |
+| ViT (BigEarthNet-S2)                  | ❌ No        | Linear probing | TBD   |       |       |           |        |       |
+| DINOv2 (Fine-tuned w/ BigEarthNet-S2) | ✅ Yes       | Linear probing | TBD   |       |       |           |        |       |
 
 > ⚠️ TODO: Replace TBD with final experimental results
 
@@ -87,10 +89,10 @@ All experiments are built around the SkyView dataset, and results from this sect
 ```
 project/
 ├── data/                  # SkyView, RSICD, BigEarthNet subsets
-├── models/                # CLIP, DINOv2, ViT models
-├── scripts/               # Feature extraction, training, evaluation
-├── results/               # Visualizations, confusion matrix, metrics
-├── README.md              # This file (Advanced Methods)
+├── models/                # CLIP, DINOv2, ViT models...
+├── scripts/               # Shell scripts for feature extraction, training, evaluation
+├── results/               # Visualizations, confusion matrix, metrics...
+├── README.md              # This file
 ```
 
 > ⚠️ TODO: Replace structure example
