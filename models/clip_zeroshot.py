@@ -331,7 +331,7 @@ def visualize_tsne(
         mask = labels == i
         plt.scatter(emb[mask, 0], emb[mask, 1], c=[colors[i]], label=cls, alpha=0.6)
     plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    plt.title("t-SNE of CLIP Image Features")
+    plt.title("t-SNE of CLIP zeroshot Image Features")
     plt.tight_layout()
     plt.savefig(out_path, format="svg")
     plt.close()

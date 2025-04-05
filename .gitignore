@@ -1,4 +1,6 @@
-/data/Aerial_Landscapes
+/data
 
 *.sh
 *.out
+
+/results/clip_finetuned_trainer
