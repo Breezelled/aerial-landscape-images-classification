@@ -63,7 +63,7 @@ All experiments are built around the SkyView dataset, and results from this sect
 | Model                                 | Fine-tuned? | Method         | Acc@1 | Acc@3 | Acc@5 | Precision | Recall | F1    |
 | ------------------------------------- | ----------- | -------------- | ----- | ----- | ----- | --------- | ------ | ----- |
 | CLIP (ViT-B/32)                       | ❌ No        | Zero-shot      | 78.44 | 94.91 | 98.66 | 80.85     | 78.44  | 77.33 |
-| CLIP (Fine-tuned w/ RSICD)            | ✅ Yes       | Zero-shot      | TBD   |       |       |           |        |       |
+| CLIP (Fine-tuned w/ RSICD)            | ✅ Yes       | Zero-shot      | 90.56 | 98.66 | 99.66 | 91.22     | 90.56  | 90.45 |
 | ViT (BigEarthNet-S2)                  | ❌ No        | Linear probing | TBD   |       |       |           |        |       |
 | DINOv2 (Fine-tuned w/ BigEarthNet-S2) | ✅ Yes       | Linear probing | TBD   |       |       |           |        |       |
 

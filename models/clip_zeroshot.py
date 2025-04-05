@@ -21,6 +21,9 @@ from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 from pytorch_grad_cam.utils.image import show_cam_on_image
 
+import argparse
+from pathlib import Path
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "openai/clip-vit-base-patch32"
 
@@ -103,10 +106,17 @@ def run_clip_zero_shot(
     dataset_dir="../data/Aerial_Landscapes",
     save_dir="../results/clip_zeroshot",
     batch_size=32,
+    model_path=None,
 ):
     os.makedirs(save_dir, exist_ok=True)
 
-    model = CLIPModel.from_pretrained(model_name).to(device)
+    if model_path and os.path.exists(os.path.join(model_path, "model.safetensors")):
+        print(f"Loading fine-tuned model from {model_path}")
+        model = CLIPModel.from_pretrained(model_path).to(device)
+    else:
+        print(f"Loading pre-trained model {model_name}")
+        model = CLIPModel.from_pretrained(model_name).to(device)
+
     processor = CLIPProcessor.from_pretrained(model_name)
 
     class_names = sorted(os.listdir(dataset_dir))
@@ -192,6 +202,21 @@ def run_clip_zero_shot(
     print(f"Macro Precision: {macro_precision}")
     print(f"Macro Recall:    {macro_recall}")
     print(f"Macro F1-score:  {macro_f1}")
+
+    result_txt_path = os.path.join(save_dir, "classification_results.txt")
+    with open(result_txt_path, "w") as f:
+        f.write("Classification Report (Macro):\n")
+        f.write(
+            classification_report(true_labels, pred_labels, target_names=class_names)
+        )
+        f.write(f"\nTop-1 Accuracy: {acc1}\n")
+        f.write(f"Top-3 Accuracy: {acc3}\n")
+        f.write(f"Top-5 Accuracy: {acc5}\n")
+        f.write(f"Macro Precision: {macro_precision}\n")
+        f.write(f"Macro Recall:    {macro_recall}\n")
+        f.write(f"Macro F1-score:  {macro_f1}\n")
+
+    print(f"Classification results saved to {result_txt_path}")
 
     # per-class rep image
     rep_images = []
@@ -339,33 +364,82 @@ def visualize_tsne(
 
 
 if __name__ == "__main__":
-    dataset_dir = "../data/Aerial_Landscapes"
-    save_dir = "../results/clip_zeroshot"
-    batch_size = 256
-
-    # Step1: Zero-shot classification
-    (
-        text_features,
-        image_features,
-        labels,
-        class_names,
-        clip_model,
-    ) = run_clip_zero_shot(dataset_dir, save_dir, batch_size)
-
-    # Step2: Grad-CAM top-1 for each class
-    visualize_gradcam(
-        clip_model,
-        text_features,
-        dataset_dir,
-        out_dir=os.path.join(save_dir, "gradcam_top1"),
+    parser = argparse.ArgumentParser(
+        description="Evaluate CLIP models on zero-shot classification"
     )
-
-    # Step3: T-SNE
-    visualize_tsne(
-        image_features,
-        labels,
-        class_names,
-        out_path=os.path.join(save_dir, "tsne_features.svg"),
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        default="../data/Aerial_Landscapes",
+        help="Dataset directory",
     )
+    parser.add_argument(
+        "--base_save_dir",
+        type=str,
+        default="../results/clip_zeroshot",
+        help="Base directory to save results",
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=512, help="Batch size for inference"
+    )
+    parser.add_argument(
+        "--model_dir",
+        type=str,
+        help="Directory containing fine-tuned models",
+        default=None,
+    )
+    parser.add_argument(
+        "--single_model",
+        type=str,
+        help="Path to a single fine-tuned model",
+        default=None,
+    )
+    args = parser.parse_args()
 
-    print("All tasks done.")
+    if args.single_model:
+        model_paths = [args.single_model]
+    elif args.model_dir:
+        model_paths = [
+            os.path.join(args.model_dir, d, "clip_finetuned_final")
+            for d in os.listdir(args.model_dir)
+            if os.path.isdir(os.path.join(args.model_dir, d, "clip_finetuned_final"))
+        ]
+    else:
+        model_paths = [None]
+
+    for model_path in model_paths:
+        if model_path:
+            model_name_part = Path(model_path).parent.name
+            save_dir = os.path.join(args.base_save_dir, model_name_part)
+        else:
+            save_dir = os.path.join(args.base_save_dir, "pretrained")
+            model_name_part = "pretrained"
+
+        print(f"\n\n===== Evaluating model: {model_name_part} =====")
+
+        # Step1: Zero-shot classification
+        (
+            text_features,
+            image_features,
+            labels,
+            class_names,
+            clip_model,
+        ) = run_clip_zero_shot(args.dataset_dir, save_dir, args.batch_size, model_path)
+
+        # Step2: Grad-CAM top-1 for each class
+        visualize_gradcam(
+            clip_model,
+            text_features,
+            args.dataset_dir,
+            out_dir=os.path.join(save_dir, "gradcam_top1"),
+        )
+
+        # Step3: T-SNE
+        visualize_tsne(
+            image_features,
+            labels,
+            class_names,
+            out_path=os.path.join(save_dir, "tsne_features.svg"),
+        )
+
+        print(f"All tasks done for model: {model_name_part}")

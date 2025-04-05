@@ -1,0 +1,29 @@
+Classification Report (Macro):
+              precision    recall  f1-score   support
+
+ Agriculture       0.84      0.90      0.87       800
+     Airport       0.95      0.61      0.74       800
+       Beach       0.94      0.98      0.96       800
+        City       0.86      0.85      0.86       800
+      Desert       0.96      0.92      0.94       800
+      Forest       0.93      0.94      0.94       800
+   Grassland       0.88      0.90      0.89       800
+     Highway       0.82      0.88      0.85       800
+        Lake       0.89      0.85      0.87       800
+    Mountain       0.90      0.94      0.92       800
+     Parking       0.89      0.98      0.93       800
+        Port       0.98      0.93      0.95       800
+     Railway       0.82      0.88      0.85       800
+ Residential       0.92      0.86      0.89       800
+       River       0.80      0.92      0.85       800
+
+    accuracy                           0.89     12000
+   macro avg       0.89      0.89      0.89     12000
+weighted avg       0.89      0.89      0.89     12000
+
+Top-1 Accuracy: 0.8884166666666666
+Top-3 Accuracy: 0.97525
+Top-5 Accuracy: 0.9898333333333333
+Macro Precision: 0.8919884680642102
+Macro Recall:    0.8884166666666667
+Macro F1-score:  0.8868618757410603
