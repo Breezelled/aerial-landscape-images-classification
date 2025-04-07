@@ -1,0 +1,74 @@
+Using device: cuda
+Epoch 1/10 - Train Loss: 1.8175
+Validation Accuracy: 0.7971 - Val Loss: 1.0785
+Epoch 2/10 - Train Loss: 0.8497
+Validation Accuracy: 0.8604 - Val Loss: 0.6706
+Epoch 3/10 - Train Loss: 0.5971
+Validation Accuracy: 0.8717 - Val Loss: 0.5388
+Epoch 4/10 - Train Loss: 0.4923
+Validation Accuracy: 0.8817 - Val Loss: 0.4639
+Epoch 5/10 - Train Loss: 0.4264
+Validation Accuracy: 0.8896 - Val Loss: 0.4201
+Epoch 6/10 - Train Loss: 0.3838
+Validation Accuracy: 0.8883 - Val Loss: 0.3936
+Epoch 7/10 - Train Loss: 0.3519
+Validation Accuracy: 0.8979 - Val Loss: 0.3638
+Epoch 8/10 - Train Loss: 0.3272
+Validation Accuracy: 0.8975 - Val Loss: 0.3542
+Epoch 9/10 - Train Loss: 0.3077
+Validation Accuracy: 0.9029 - Val Loss: 0.3362
+Epoch 10/10 - Train Loss: 0.2924
+Validation Accuracy: 0.9012 - Val Loss: 0.3301
+📈 Loss curve saved as loss_curve_Aerial_Landscapes.png
+/srv/scratch/z5485311/comp9517/venv/lib/python3.10/site-packages/sklearn/manifold/_t_sne.py:1164: FutureWarning: 'n_iter' was renamed to 'max_iter' in version 1.5 and will be removed in 1.7.
+  warnings.warn(
+
+Classification Report:
+              precision    recall  f1-score   support
+
+ Agriculture       0.95      0.94      0.95       159
+     Airport       0.86      0.86      0.86       149
+       Beach       0.97      0.90      0.94       178
+        City       0.89      0.88      0.88       163
+      Desert       0.91      0.97      0.94       160
+      Forest       0.92      0.93      0.92       142
+   Grassland       0.90      0.94      0.92       173
+     Highway       0.91      0.88      0.90       156
+        Lake       0.89      0.81      0.85       172
+    Mountain       0.91      0.97      0.94       179
+     Parking       0.94      0.97      0.95       145
+        Port       0.94      0.91      0.93       165
+     Railway       0.78      0.84      0.81       141
+ Residential       0.95      0.90      0.92       148
+       River       0.83      0.83      0.83       170
+
+    accuracy                           0.90      2400
+   macro avg       0.90      0.90      0.90      2400
+weighted avg       0.90      0.90      0.90      2400
+
+t-SNE visualization saved at tsne.png
+📄 Classification report saved at classification_report.txt
+
+================================================================================
+                     Resource Usage on 07/04/2025 20:54:10                      
+
+Job Id: 6429805 
+Queue: CSE
+Walltime: 00:01:41  (requested 01:00:00)
+Job execution was successful. Exit Status 0. 
+
+--------------------------------------------------------------------------------
+|              |             GPUs              |            Memory             |
+--------------------------------------------------------------------------------
+| Node  GPU ID | Requested   Used   Efficiency | Available   Used              |
+| k173    0    |     1       0.47       47%    | 46068 MiB   8.71G             |
+--------------------------------------------------------------------------------
+|Total         |     1       0.47      47.0%   |                               |
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+|              |             CPUs              |            Memory             |
+--------------------------------------------------------------------------------
+| Node         | Requested   Used   Efficiency | Requested   Used   Efficiency |
+| k173         |     4       3.02      75.0%   |  24.0gb    3.98gb     16.6%   |
+--------------------------------------------------------------------------------
