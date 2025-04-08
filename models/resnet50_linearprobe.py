@@ -1,3 +1,4 @@
+
 import os
 import shutil
 import torch
@@ -98,18 +99,26 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.001)
 
+
 def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
+    assert len(preds) == len(labels), "Predictions and labels must have same length"
+    labels = labels.to(preds.device).long()
+
     metrics = {}
     max_k = max(top_k)
     _, pred_indices = torch.topk(preds, max_k, dim=1)
 
     for k in top_k:
-        correct = torch.sum(pred_indices[:, :k] == labels.view(-1, 1))
-        metrics[f'acc@{k}'] = correct.float().mean().item() * 100
+        correct = pred_indices[:, :k].eq(labels.view(-1, 1))
+        correct_k = correct.any(dim=1).float()
+        metrics[f'acc@{k}'] = correct_k.mean().item() * 100
 
     pred_labels = pred_indices[:, 0]
     precision, recall, f1, _ = precision_recall_fscore_support(
-        labels.cpu().numpy(), pred_labels.cpu().numpy(), average='weighted'
+        labels.cpu().numpy(),
+        pred_labels.cpu().numpy(),
+        average='weighted',
+        zero_division=0
     )
     metrics.update({'precision': precision, 'recall': recall, 'f1': f1})
     return metrics
