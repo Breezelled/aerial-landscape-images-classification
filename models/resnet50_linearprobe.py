@@ -15,11 +15,11 @@ from transformers import AutoImageProcessor, ResNetForImageClassification
 from torchvision import transforms
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-data_dir = 'data/Aerial_Landscapes'
-output_dir = 'data/split_Aerial_Landscapes'
+data_dir = '../data/Aerial_Landscapes'
+output_dir = '../data/split_Aerial_Landscapes'
 
-train_ratio, val_ratio, test_ratio = 0.7, 0.15, 0.15
-for split in ['train', 'val', 'test']:
+train_ratio, test_ratio = 0.8, 0.2
+for split in ['train', 'test']:
     os.makedirs(os.path.join(output_dir, split), exist_ok=True)
 
 for category in os.listdir(data_dir):
@@ -28,10 +28,9 @@ for category in os.listdir(data_dir):
         continue
 
     images = [f for f in os.listdir(category_dir) if f.endswith('.jpg')]
-    train_images, temp_images = train_test_split(images, train_size=train_ratio, random_state=42)
-    val_images, test_images = train_test_split(temp_images, test_size=test_ratio / (val_ratio + test_ratio), random_state=42)
+    train_images, test_images = train_test_split(images, train_size=train_ratio, random_state=42)
 
-    for split, split_images in zip(['train', 'val', 'test'], [train_images, val_images, test_images]):
+    for split, split_images in zip(['train', 'test'], [train_images, test_images]):
         split_category_dir = os.path.join(output_dir, split, category)
         os.makedirs(split_category_dir, exist_ok=True)
         for img in split_images:
@@ -90,16 +89,14 @@ transform = transforms.Compose([
 ])
 
 train_dataset = CustomImageDataset(os.path.join(output_dir, 'train'), processor, transform)
-val_dataset = CustomImageDataset(os.path.join(output_dir, 'val'), processor, transform)
 test_dataset = CustomImageDataset(os.path.join(output_dir, 'test'), processor, transform)
 
-batch_size = 32
+batch_size = 256
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size)
 test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.classifier.parameters(), lr=1e-4)
+optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.001)
 
 def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
     metrics = {}
@@ -186,7 +183,7 @@ def main():
     best_f1 = 0.0
     for epoch in range(10):
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
-        val_loss, val_metrics = evaluate(model, val_loader, criterion, device)
+        val_loss, val_metrics = evaluate(model, test_loader, criterion, device)
 
         print(f"\nEpoch {epoch+1}:")
         print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")

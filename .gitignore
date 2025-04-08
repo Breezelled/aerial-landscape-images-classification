@@ -4,3 +4,5 @@
 *.out
 
 /results/clip_finetuned_trainer
+
+*.pth
