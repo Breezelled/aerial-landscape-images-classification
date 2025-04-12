@@ -1,9 +1,7 @@
 import os
-import shutil
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
-from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, Dataset, random_split
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.manifold import TSNE
 import numpy as np
@@ -15,38 +13,17 @@ from reben_publication.BigEarthNetv2_0_ImageClassifier import BigEarthNetv2_0_Im
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-data_dir = '../data/Aerial_Landscapes'
-output_dir = '../data/split_Aerial_Landscapes'
-
-train_ratio, test_ratio = 0.8, 0.2
-for split in ['train', 'test']:
-    os.makedirs(os.path.join(output_dir, split), exist_ok=True)
-
-for category in os.listdir(data_dir):
-    category_dir = os.path.join(data_dir, category)
-    if not os.path.isdir(category_dir):
-        continue
-
-    images = [f for f in os.listdir(category_dir) if f.endswith('.jpg')]
-    train_images, test_images = train_test_split(images, train_size=train_ratio, random_state=42)
-
-    for split, split_images in zip(['train', 'test'], [train_images, test_images]):
-        split_category_dir = os.path.join(output_dir, split, category)
-        os.makedirs(split_category_dir, exist_ok=True)
-        for img in split_images:
-            shutil.copy(os.path.join(category_dir, img), os.path.join(split_category_dir, img))
-
 
 class CustomImageDataset(Dataset):
-    def __init__(self, dataset_dir, transform=None):
-        self.dataset_dir = dataset_dir
+    def __init__(self, data_dir, transform=None):
+        self.data_dir = data_dir
         self.transform = transform
-        self.classes = sorted(os.listdir(dataset_dir))
+        self.classes = sorted(os.listdir(data_dir))
         self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.classes)}
 
         self.samples = []
         for target_class in self.classes:
-            class_dir = os.path.join(dataset_dir, target_class)
+            class_dir = os.path.join(data_dir, target_class)
             for img_name in os.listdir(class_dir):
                 if img_name.endswith('.jpg'):
                     self.samples.append((os.path.join(class_dir, img_name), self.class_to_idx[target_class]))
@@ -57,29 +34,9 @@ class CustomImageDataset(Dataset):
     def __getitem__(self, idx):
         img_path, label = self.samples[idx]
         image = Image.open(img_path).convert('RGB')
-
         if self.transform:
             image = self.transform(image)
-
         return image, label
-
-
-model_name = "BIFOLD-BigEarthNetv2-0/resnet50-s2-v0.2.0"
-model = BigEarthNetv2_0_ImageClassifier.from_pretrained(model_name)
-
-for param in model.parameters():
-    param.requires_grad = False
-
-num_classes = len(os.listdir(os.path.join(output_dir, 'train')))
-model.classifier = nn.Sequential(
-    nn.Flatten(),
-    nn.Linear(model.classifier[1].in_features, num_classes)
-)
-
-for param in model.classifier.parameters():
-    param.requires_grad = True
-
-model = model.to(device)
 
 transform = transforms.Compose([
     transforms.Resize(256),
@@ -88,16 +45,58 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-train_dataset = CustomImageDataset(os.path.join(output_dir, 'train'), transform)
-test_dataset = CustomImageDataset(os.path.join(output_dir, 'test'), transform)
+data_dir = '../data/Aerial_Landscapes'
+full_dataset = CustomImageDataset(data_dir, transform=transform)
+
+train_size = int(0.8 * len(full_dataset))
+test_size = len(full_dataset) - train_size
+train_dataset, test_dataset = random_split(
+    full_dataset,
+    [train_size, test_size],
+    generator=torch.Generator().manual_seed(42)
+)
+
+class_names = full_dataset.classes
+num_classes = len(class_names)
 
 batch_size = 256
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=4, pin_memory=True)
+
+model_name = "BIFOLD-BigEarthNetv2-0/resnet50-s2-v0.2.0"
+model = BigEarthNetv2_0_ImageClassifier.from_pretrained(model_name)
+
+for param in model.parameters():
+    param.requires_grad = False
+
+model.model = nn.Sequential(
+    model.model,
+    nn.Flatten(),
+    nn.Linear(19, num_classes)
+)
+
+for param in model.model[0].parameters():
+    param.requires_grad = False
+for param in model.model[1].parameters():
+    param.requires_grad = True
+for param in model.model[2].parameters():
+    param.requires_grad = True
+
+model = model.to(device)
+
+dummy_input = torch.randn(1, 3, 224, 224).to(device)
+try:
+    output = model(dummy_input)
+    print(f"passed: {output.shape}")
+except Exception as e:
+    print(f"failed: {str(e)}")
+    exit()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.classifier.parameters(), lr=0.001)
-
+optimizer = torch.optim.Adam([
+    {'params': model.model[1].parameters()},
+    {'params': model.model[2].parameters()}
+], lr=0.001)
 
 def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
     metrics = {}
@@ -149,7 +148,6 @@ def evaluate(model, loader, criterion, device):
     metrics = calculate_metrics(all_preds, all_labels)
     return running_loss / len(loader), metrics
 
-
 def extract_features(model, dataloader):
     model.eval()
     features = []
@@ -157,12 +155,10 @@ def extract_features(model, dataloader):
     with torch.no_grad():
         for inputs, lbls in tqdm(dataloader, desc="Extracting features"):
             inputs = inputs.to(device)
-            outputs = model(inputs, output_hidden_states=True)
-            feat = outputs.hidden_states[-1]
-            features.append(feat.mean(dim=[2, 3]).cpu())
+            feature_output = model.model[0](inputs)
+            features.append(feature_output.cpu())
             labels.append(lbls)
     return torch.cat(features).numpy(), torch.cat(labels).numpy()
-
 
 def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
