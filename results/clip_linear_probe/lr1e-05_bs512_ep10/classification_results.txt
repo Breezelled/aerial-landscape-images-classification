@@ -1,0 +1,36 @@
+Classification Report (Validation Set):
+              precision    recall  f1-score   support
+
+ Agriculture       0.91      0.97      0.94       159
+     Airport       0.94      0.96      0.95       149
+       Beach       1.00      0.98      0.99       178
+        City       0.95      0.87      0.91       163
+      Desert       0.95      0.98      0.96       160
+      Forest       0.94      0.96      0.95       142
+   Grassland       0.96      0.94      0.95       173
+     Highway       0.99      0.93      0.96       156
+        Lake       0.96      0.87      0.91       172
+    Mountain       0.90      0.96      0.92       179
+     Parking       0.98      0.99      0.99       145
+        Port       0.93      0.99      0.96       165
+     Railway       0.90      0.91      0.91       141
+ Residential       0.92      0.99      0.95       148
+       River       0.94      0.87      0.90       170
+
+    accuracy                           0.94      2400
+   macro avg       0.94      0.94      0.94      2400
+weighted avg       0.94      0.94      0.94      2400
+
+Validation Top-1 Accuracy: 0.94375
+Validation Top-3 Accuracy: 0.9970833333333333
+Validation Top-5 Accuracy: 1.0
+Macro Precision: 0.944438350480674
+Macro Recall:    0.9446181129625265
+Macro F1-score:  0.9437940095747781
+
+Training Params:
+Epochs: 10
+LR: 0.001
+Batch Size: 512
+Train Split Ratio: 0.8
+Base CLIP Model: ../results/clip_finetuned_trainer/lr1e-05_bs512_ep10/clip_finetuned_final

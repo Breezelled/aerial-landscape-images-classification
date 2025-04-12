@@ -1,0 +1,36 @@
+Classification Report (Validation Set):
+              precision    recall  f1-score   support
+
+ Agriculture       0.94      0.91      0.92       159
+     Airport       0.79      0.91      0.84       149
+       Beach       0.98      0.95      0.97       178
+        City       0.97      0.87      0.92       163
+      Desert       0.93      0.90      0.91       160
+      Forest       0.94      0.89      0.91       142
+   Grassland       0.93      0.86      0.89       173
+     Highway       0.95      0.87      0.91       156
+        Lake       0.87      0.57      0.69       172
+    Mountain       0.85      0.96      0.90       179
+     Parking       0.95      0.92      0.94       145
+        Port       0.97      0.93      0.95       165
+     Railway       0.80      0.96      0.87       141
+ Residential       0.77      0.99      0.87       148
+       River       0.74      0.83      0.78       170
+
+    accuracy                           0.89      2400
+   macro avg       0.89      0.89      0.89      2400
+weighted avg       0.89      0.89      0.88      2400
+
+Validation Top-1 Accuracy: 0.8854166666666666
+Validation Top-3 Accuracy: 0.9758333333333333
+Validation Top-5 Accuracy: 0.9908333333333333
+Macro Precision: 0.8916422777373879
+Macro Recall:    0.8876888246241207
+Macro F1-score:  0.8850089401036008
+
+Training Params:
+Epochs: 10
+LR: 0.001
+Batch Size: 512
+Train Split Ratio: 0.8
+Base DINOv2 Model: facebook/dinov2-base

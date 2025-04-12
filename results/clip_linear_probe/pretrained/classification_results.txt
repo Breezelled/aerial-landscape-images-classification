@@ -1,0 +1,36 @@
+Classification Report (Validation Set):
+              precision    recall  f1-score   support
+
+ Agriculture       0.89      0.94      0.91       159
+     Airport       0.92      0.99      0.95       149
+       Beach       0.98      0.96      0.97       178
+        City       0.96      0.88      0.92       163
+      Desert       0.87      0.93      0.90       160
+      Forest       0.91      0.91      0.91       142
+   Grassland       0.93      0.91      0.92       173
+     Highway       0.99      0.92      0.95       156
+        Lake       0.93      0.84      0.88       172
+    Mountain       0.85      0.93      0.89       179
+     Parking       0.95      0.97      0.96       145
+        Port       0.96      0.90      0.93       165
+     Railway       0.88      0.91      0.90       141
+ Residential       0.87      0.99      0.93       148
+       River       0.96      0.84      0.90       170
+
+    accuracy                           0.92      2400
+   macro avg       0.92      0.92      0.92      2400
+weighted avg       0.92      0.92      0.92      2400
+
+Validation Top-1 Accuracy: 0.9204166666666667
+Validation Top-3 Accuracy: 0.9920833333333333
+Validation Top-5 Accuracy: 0.99875
+Macro Precision: 0.9222660175043434
+Macro Recall:    0.9217622464885463
+Macro F1-score:  0.9206970719951825
+
+Training Params:
+Epochs: 10
+LR: 0.001
+Batch Size: 512
+Train Split Ratio: 0.8
+Base CLIP Model: openai/clip-vit-base-patch32
