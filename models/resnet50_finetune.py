@@ -117,7 +117,7 @@ def extract_features(model, dataloader):
             labels.append(lbls)
     return torch.cat(features).numpy(), torch.cat(labels).numpy()
 
-def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
+def visualize_tsne(features, labels, class_names, title="t-SNE Visualization", save_path=None):
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
     features_2d = tsne.fit_transform(features)
 
@@ -137,9 +137,17 @@ def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
     plt.ylabel("Dimension 2")
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path)
+        print(f"t-SNE visualization saved to {save_path}")
+
     plt.show()
 
 def main():
+    results_dir = os.path.join("../results", "resnet50_finetune")
+    os.makedirs(results_dir, exist_ok=True)
+    print(f"Results will be saved to: {results_dir}")
+
     best_f1 = 0.0
     for epoch in range(10):
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
@@ -164,11 +172,19 @@ def main():
 
     print("\nGenerating t-SNE visualization...")
     test_features, test_labels = extract_features(model, test_loader)
+    
+    with open(os.path.join(results_dir, "classification_results.txt"), "w") as f:
+        f.write("Final Test Results:\n")
+        f.write(f"Test Loss: {test_loss:.4f}\n")
+        f.write(f"Top-1 Acc: {test_metrics['acc@1']:.2f}% | Top-3 Acc: {test_metrics['acc@3']:.2f}% | Top-5 Acc: {test_metrics['acc@5']:.2f}%\n")
+        f.write(f"Precision: {test_metrics['precision']:.4f} | Recall: {test_metrics['recall']:.4f} | F1: {test_metrics['f1']:.4f}\n")
+    
     visualize_tsne(
         test_features,
         test_labels,
         class_names=class_names,
-        title="t-SNE of Test Set Features (Best Model)"
+        title="t-SNE of ResNet50 Features (Finetuned)",
+        save_path=os.path.join(results_dir, "tsne_visualization.png")
     )
 
 if __name__ == "__main__":

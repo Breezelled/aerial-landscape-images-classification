@@ -9,9 +9,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
 from torchvision import transforms
-from reben_publication.BigEarthNetv2_0_ImageClassifier import BigEarthNetv2_0_ImageClassifier
+import timm
+from torchgeo.models import ResNet50_Weights
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class CustomImageDataset(Dataset):
     def __init__(self, data_dir, transform=None):
@@ -62,30 +64,39 @@ batch_size = 256
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=4, pin_memory=True)
 
-model_name = "BIFOLD-BigEarthNetv2-0/resnet50-s2-v0.2.0"
-model = BigEarthNetv2_0_ImageClassifier.from_pretrained(model_name)
+weights = ResNet50_Weights.SENTINEL2_RGB_MOCO
+base_model = timm.create_model("resnet50", pretrained=False, in_chans=3, num_classes=0)
+base_model.load_state_dict(weights.get_state_dict(progress=True), strict=False)
 
-model.model = nn.Sequential(
-    model.model,
+model = nn.Sequential(
+    base_model,
     nn.Flatten(),
-    nn.Linear(19, num_classes)
+    nn.Linear(2048, num_classes)
 )
+
+for param in model[0].parameters():
+    param.requires_grad = False
+
+for param in model[1].parameters():
+    param.requires_grad = True
+for param in model[2].parameters():
+    param.requires_grad = True
 
 model = model.to(device)
 
 dummy_input = torch.randn(1, 3, 224, 224).to(device)
 try:
     output = model(dummy_input)
-    print(f"success: {output.shape}")
+    print(f"passed: {output.shape}")
 except Exception as e:
     print(f"failed: {str(e)}")
     exit()
 
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='max', factor=0.5, patience=3, verbose=True)
-
+optimizer = torch.optim.Adam([
+    {'params': model[1].parameters()},
+    {'params': model[2].parameters()}
+], lr=0.001)
 
 def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
     metrics = {}
@@ -93,8 +104,9 @@ def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
     _, pred_indices = torch.topk(preds, max_k, dim=1)
 
     for k in top_k:
-        correct = torch.sum(pred_indices[:, :k] == labels.view(-1, 1))
-        metrics[f'acc@{k}'] = correct.float().mean().item() * 100
+        correct = pred_indices[:, :k].eq(labels.view(-1, 1))
+        correct_k = correct.any(dim=1).float()
+        metrics[f'acc@{k}'] = correct_k.mean().item() * 100
 
     pred_labels = pred_indices[:, 0]
     precision, recall, f1, _ = precision_recall_fscore_support(
@@ -137,7 +149,6 @@ def evaluate(model, loader, criterion, device):
     metrics = calculate_metrics(all_preds, all_labels)
     return running_loss / len(loader), metrics
 
-
 def extract_features(model, dataloader):
     model.eval()
     features = []
@@ -145,15 +156,12 @@ def extract_features(model, dataloader):
     with torch.no_grad():
         for inputs, lbls in tqdm(dataloader, desc="Extracting features"):
             inputs = inputs.to(device)
-            feature_output = model.model[0](inputs)
-            if len(feature_output.shape) > 2:
-                feature_output = feature_output.mean(dim=[2, 3])
+            feature_output = model[0](inputs)
             features.append(feature_output.cpu())
             labels.append(lbls)
     return torch.cat(features).numpy(), torch.cat(labels).numpy()
 
-
-def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
+def visualize_tsne(features, labels, class_names, title="t-SNE Visualization", save_path=None):
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
     features_2d = tsne.fit_transform(features)
 
@@ -173,17 +181,21 @@ def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
     plt.ylabel("Dimension 2")
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path)
+        print(f"t-SNE visualization saved to {save_path}")
     plt.show()
 
-def main():
-    best_f1 = 0.0
-    early_stop_counter = 0
-    patience = 5
 
+def main():
+    results_dir = os.path.join("../results", "torchgeo_resnet50_linearprobe")
+    os.makedirs(results_dir, exist_ok=True)
+    print(f"Results will be saved to: {results_dir}")
+
+    best_f1 = 0.0
     for epoch in range(10):
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_metrics = evaluate(model, test_loader, criterion, device)
-        scheduler.step(val_metrics['f1'])
 
         print(f"\nEpoch {epoch + 1}:")
         print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
@@ -194,16 +206,10 @@ def main():
 
         if val_metrics['f1'] > best_f1:
             best_f1 = val_metrics['f1']
-            torch.save(model.state_dict(), 'best_finetune_model.pth')
+            torch.save(model.state_dict(), 'best_model.pth')
             print("Saved best model!")
-            early_stop_counter = 0
-        else:
-            early_stop_counter += 1
-            if early_stop_counter >= patience:
-                print(f"Early stopping at epoch {epoch + 1}")
-                break
 
-    model.load_state_dict(torch.load('best_finetune_model.pth'))
+    model.load_state_dict(torch.load('best_model.pth'))
     test_loss, test_metrics = evaluate(model, test_loader, criterion, device)
     print("\nFinal Test Results:")
     print(f"Test Loss: {test_loss:.4f}")
@@ -214,11 +220,19 @@ def main():
 
     print("\nGenerating t-SNE visualization...")
     test_features, test_labels = extract_features(model, test_loader)
+
+    with open(os.path.join(results_dir, "classification_results.txt"), "w") as f:
+        f.write("Final Test Results:\n")
+        f.write(f"Test Loss: {test_loss:.4f}\n")
+        f.write(f"Top-1 Acc: {test_metrics['acc@1']:.2f}% | Top-3 Acc: {test_metrics['acc@3']:.2f}% | Top-5 Acc: {test_metrics['acc@5']:.2f}%\n")
+        f.write(f"Precision: {test_metrics['precision']:.4f} | Recall: {test_metrics['recall']:.4f} | F1: {test_metrics['f1']:.4f}\n")
+    
     visualize_tsne(
         test_features,
         test_labels,
         class_names=class_names,
-        title="t-SNE of Test Set Features (Finetuned Model)"
+        title="t-SNE of TorchGeo Features (Linear Probing)",
+        save_path=os.path.join(results_dir, "tsne_visualization.png")
     )
 
 
