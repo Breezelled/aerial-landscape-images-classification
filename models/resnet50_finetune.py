@@ -1,9 +1,7 @@
 import os
-import shutil
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, random_split
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.manifold import TSNE
 import numpy as np
@@ -11,96 +9,52 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
 from transformers import AutoImageProcessor, ResNetForImageClassification
-from torchvision import transforms
+from torchvision import transforms, datasets
 from torch.utils.data import Dataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 data_dir = '../data/Aerial_Landscapes'
-output_dir = '../data/split_Aerial_Landscapes'
-
-train_ratio, test_ratio = 0.8, 0.2
-for split in ['train', 'test']:
-    os.makedirs(os.path.join(output_dir, split), exist_ok=True)
-
-for category in os.listdir(data_dir):
-    category_dir = os.path.join(data_dir, category)
-    if not os.path.isdir(category_dir):
-        continue
-
-    images = [f for f in os.listdir(category_dir) if f.endswith('.jpg')]
-    train_images, test_images = train_test_split(images, train_size=train_ratio, random_state=42)
-
-    for split, split_images in zip(['train', 'test'], [train_images, test_images]):
-        split_category_dir = os.path.join(output_dir, split, category)
-        os.makedirs(split_category_dir, exist_ok=True)
-        for img in split_images:
-            shutil.copy(os.path.join(category_dir, img), os.path.join(split_category_dir, img))
-
-
-class CustomImageDataset(Dataset):
-    def __init__(self, dataset_dir, processor, transform=None):
-        self.dataset_dir = dataset_dir
-        self.processor = processor
-        self.transform = transform
-        self.classes = sorted(os.listdir(dataset_dir))
-        self.class_to_idx = {cls_name: i for i, cls_name in enumerate(self.classes)}
-
-        self.samples = []
-        for target_class in self.classes:
-            class_dir = os.path.join(dataset_dir, target_class)
-            for img_name in os.listdir(class_dir):
-                if img_name.endswith('.jpg'):
-                    self.samples.append((os.path.join(class_dir, img_name), self.class_to_idx[target_class]))
-
-    def __len__(self):
-        return len(self.samples)
-
-    def __getitem__(self, idx):
-        img_path, label = self.samples[idx]
-        image = Image.open(img_path).convert('RGB')
-
-        if self.transform:
-            image = self.transform(image)
-
-        inputs = self.processor(images=image, return_tensors="pt")
-        return inputs['pixel_values'].squeeze(0), label
-
-
-model_name = "microsoft/resnet-50"
-processor = AutoImageProcessor.from_pretrained(model_name)
-model = ResNetForImageClassification.from_pretrained(model_name)
-
-num_classes = len(os.listdir(os.path.join(output_dir, 'train')))
-model.classifier = nn.Sequential(
-    nn.Flatten(),
-    nn.Linear(model.classifier[1].in_features, num_classes)
-)
-model = model.to(device)
 
 transform = transforms.Compose([
     transforms.Resize(256),
     transforms.CenterCrop(224),
     transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                        std=[0.229, 0.224, 0.225])
 ])
 
-train_dataset = CustomImageDataset(os.path.join(output_dir, 'train'), processor, transform)
-test_dataset = CustomImageDataset(os.path.join(output_dir, 'test'), processor, transform)
+full_dataset = datasets.ImageFolder(data_dir, transform=transform)
+class_names = full_dataset.classes
+num_classes = len(class_names)
+
+train_size = int(0.8 * len(full_dataset))
+test_size = len(full_dataset) - train_size
+train_dataset, test_dataset = random_split(
+    full_dataset,
+    [train_size, test_size],
+    generator=torch.Generator().manual_seed(42)
+)
 
 batch_size = 256
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, num_workers=4, pin_memory=True)
+
+model_name = "microsoft/resnet-50"
+model = ResNetForImageClassification.from_pretrained(model_name)
+in_features = model.classifier[1].in_features
+model.classifier[1] = nn.Linear(in_features, num_classes)
+model = model.to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
 def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
     assert len(preds) == len(labels), "Predictions and labels must have same length"
     labels = labels.to(preds.device).long()
 
     metrics = {}
-    max_k = max(top_k)
+    max_k = min(max(top_k), preds.size(1))
     _, pred_indices = torch.topk(preds, max_k, dim=1)
 
     for k in top_k:
@@ -118,7 +72,6 @@ def calculate_metrics(preds, labels, top_k=(1, 3, 5)):
     metrics.update({'precision': precision, 'recall': recall, 'f1': f1})
     return metrics
 
-
 def train_epoch(model, loader, criterion, optimizer, device):
     model.train()
     running_loss = 0.0
@@ -131,7 +84,6 @@ def train_epoch(model, loader, criterion, optimizer, device):
         optimizer.step()
         running_loss += loss.item()
     return running_loss / len(loader)
-
 
 def evaluate(model, loader, criterion, device):
     model.eval()
@@ -152,7 +104,6 @@ def evaluate(model, loader, criterion, device):
     metrics = calculate_metrics(all_preds, all_labels)
     return running_loss / len(loader), metrics
 
-
 def extract_features(model, dataloader):
     model.eval()
     features = []
@@ -166,7 +117,6 @@ def extract_features(model, dataloader):
             labels.append(lbls)
     return torch.cat(features).numpy(), torch.cat(labels).numpy()
 
-
 def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
     tsne = TSNE(n_components=2, perplexity=30, random_state=42)
     features_2d = tsne.fit_transform(features)
@@ -178,7 +128,7 @@ def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
         idx = labels == i
         plt.scatter(
             features_2d[idx, 0], features_2d[idx, 1],
-            c=colors[i].reshape(1, -1), label=class_name,
+            c=[colors[i]], label=class_name,
             alpha=0.7, s=15
         )
 
@@ -189,7 +139,6 @@ def visualize_tsne(features, labels, class_names, title="t-SNE Visualization"):
     plt.tight_layout()
     plt.show()
 
-
 def main():
     best_f1 = 0.0
     for epoch in range(10):
@@ -198,10 +147,8 @@ def main():
 
         print(f"\nEpoch {epoch + 1}:")
         print(f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
-        print(
-            f"Top-1 Acc: {val_metrics['acc@1']:.2f}% | Top-3 Acc: {val_metrics['acc@3']:.2f}% | Top-5 Acc: {val_metrics['acc@5']:.2f}%")
-        print(
-            f"Precision: {val_metrics['precision']:.4f} | Recall: {val_metrics['recall']:.4f} | F1: {val_metrics['f1']:.4f}")
+        print(f"Top-1 Acc: {val_metrics['acc@1']:.2f}% | Top-3 Acc: {val_metrics['acc@3']:.2f}% | Top-5 Acc: {val_metrics['acc@5']:.2f}%")
+        print(f"Precision: {val_metrics['precision']:.4f} | Recall: {val_metrics['recall']:.4f} | F1: {val_metrics['f1']:.4f}")
 
         if val_metrics['f1'] > best_f1:
             best_f1 = val_metrics['f1']
@@ -212,20 +159,17 @@ def main():
     test_loss, test_metrics = evaluate(model, test_loader, criterion, device)
     print("\nFinal Test Results:")
     print(f"Test Loss: {test_loss:.4f}")
-    print(
-        f"Top-1 Acc: {test_metrics['acc@1']:.2f}% | Top-3 Acc: {test_metrics['acc@3']:.2f}% | Top-5 Acc: {test_metrics['acc@5']:.2f}%")
-    print(
-        f"Precision: {test_metrics['precision']:.4f} | Recall: {test_metrics['recall']:.4f} | F1: {test_metrics['f1']:.4f}")
+    print(f"Top-1 Acc: {test_metrics['acc@1']:.2f}% | Top-3 Acc: {test_metrics['acc@3']:.2f}% | Top-5 Acc: {test_metrics['acc@5']:.2f}%")
+    print(f"Precision: {test_metrics['precision']:.4f} | Recall: {test_metrics['recall']:.4f} | F1: {test_metrics['f1']:.4f}")
 
     print("\nGenerating t-SNE visualization...")
     test_features, test_labels = extract_features(model, test_loader)
     visualize_tsne(
         test_features,
         test_labels,
-        class_names=test_dataset.classes,
+        class_names=class_names,
         title="t-SNE of Test Set Features (Best Model)"
     )
-
 
 if __name__ == "__main__":
     main()
