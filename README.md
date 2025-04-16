@@ -66,6 +66,8 @@ All experiments are built around the SkyView dataset, and results from this sect
 | CLIP (Fine-tuned w/ RSICD)            | ✅ Yes       | Zero-shot      | 90.56 | 98.66 | 99.66 | 91.22     | 90.56  | 90.45 |
 | ViT (BigEarthNet-S2)                  | ❌ No        | Linear probing | TBD   |       |       |           |        |       |
 | DINOv2 (Fine-tuned w/ BigEarthNet-S2) | ✅ Yes       | Linear probing | TBD   |       |       |           |        |       |
+| Resnet50 (linearprobe on mask)        | ❌ No        | Linear probing | 89.54 | 98.42 | 99.42 | 89.69     | 89.67  | 89.65 |
+| Resnet50 (finetune on mask)           | ✅ Yes       | Linear probing | 97.04 | 99.71 | 99.92 | 97.09     | 97.09  | 97.08 |
 
 > ⚠️ TODO: Replace TBD with final experimental results
 
@@ -91,6 +93,7 @@ project/
 ├── data/                  # SkyView, RSICD, BigEarthNet subsets
 ├── models/                # CLIP, DINOv2, ViT models...
 ├── scripts/               # Shell scripts for feature extraction, training, evaluation
+├── utils/                 # Utility functions (mask generator...)
 ├── results/               # Visualizations, confusion matrix, metrics...
 ├── README.md              # This file
 ```
@@ -112,6 +115,7 @@ project/
 - **DINOv2**: [Code](https://github.com/facebookresearch/dinov2) | [Paper](https://arxiv.org/abs/2304.07193)
 - **BigEarthNet v2.0**: [Website](https://bigearth.net) | [Paper](https://arxiv.org/abs/2407.03653)
 - **RSICD Dataset**: [Code](https://github.com/201528014227051/RSICD_optimal) | [Paper](https://arxiv.org/abs/1712.07835)
+- **SAM2**: [Code](https://github.com/facebookresearch/sam2.git) | [Paper](https://arxiv.org/abs/2408.00714)
 
 ---
 
