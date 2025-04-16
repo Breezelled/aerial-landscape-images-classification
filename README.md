@@ -55,6 +55,18 @@ All experiments are built around the SkyView dataset, and results from this sect
 - Train Logistic Regression or SVM for classification
 - ✅ *Evaluates quality of semantic visual features learned from remote sensing*
 
+#### 🔹 Resnet50 + image mask + Linear Probing
+- Use resnet50 pretrained on ImageNet
+- Extract features from masked remote sensing images (e.g., using SAM2-generated masks)
+- Freeze ResNet-50 weights and use extracted features for classification
+- ✅ *Evaluates the effectiveness of masked image features in remote sensing classification*
+
+
+#### 🔹 Resnet50 + image mask + Fine tuned
+- Use resnet50 pretrained on ImageNet
+- Extract features from masked remote sensing images (e.g., using SAM2-generated masks)
+- Fine-tune all weights jointly with the classifier head
+- ✅ *Evaluates the effectiveness of masked image features in remote sensing classification*
 ---
 
 ### 🔬 Experiments & Results
