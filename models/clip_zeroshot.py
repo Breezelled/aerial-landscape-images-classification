@@ -412,7 +412,7 @@ if __name__ == "__main__":
             model_name_part = Path(model_path).parent.name
             save_dir = os.path.join(args.base_save_dir, model_name_part)
         else:
-            save_dir = os.path.join(args.base_save_dir, "pretrained")
+            save_dir = os.path.join(args.base_save_dir, "pretrained", args.dataset_dir.split("/")[-1])
             model_name_part = "pretrained"
 
         print(f"\n\n===== Evaluating model: {model_name_part} =====")
