@@ -72,14 +72,15 @@ All experiments are built around the SkyView dataset, and results from this sect
 ### 🔬 Experiments & Results
 
 
-| Model                                 | Fine-tuned? | Method         | Acc@1 | Acc@3 | Acc@5 | Precision | Recall | F1    |
-| ------------------------------------- | ----------- | -------------- | ----- | ----- | ----- | --------- | ------ | ----- |
-| CLIP (ViT-B/32)                       | ❌ No        | Zero-shot      | 78.44 | 94.91 | 98.66 | 80.85     | 78.44  | 77.33 |
-| CLIP (Fine-tuned w/ RSICD)            | ✅ Yes       | Zero-shot      | 90.56 | 98.66 | 99.66 | 91.22     | 90.56  | 90.45 |
-| ViT (BigEarthNet-S2)                  | ❌ No        | Linear probing | TBD   |       |       |           |        |       |
-| DINOv2 (Fine-tuned w/ BigEarthNet-S2) | ✅ Yes       | Linear probing | TBD   |       |       |           |        |       |
-| Resnet50 (linearprobe on mask)        | ❌ No        | Linear probing | 89.54 | 98.42 | 99.42 | 89.69     | 89.67  | 89.65 |
-| Resnet50 (finetune on mask)           | ✅ Yes       | Linear probing | 97.04 | 99.71 | 99.92 | 97.09     | 97.09  | 97.08 |
+| Model                                       | Fine-tuned? | Method         | Acc@1 | Acc@3 | Acc@5 | Precision | Recall | F1    |
+|---------------------------------------------|-------------|----------------|-------|-------|-------|-----------|--------|-------|
+| CLIP (ViT-B/32)                             | ❌ No        | Zero-shot      | 78.44 | 94.91 | 98.66 | 80.85     | 78.44  | 77.33 |
+| CLIP (Fine-tuned w/ RSICD)                  | ✅ Yes       | Zero-shot      | 90.56 | 98.66 | 99.66 | 91.22     | 90.56  | 90.45 |
+| ViT (vit-base-patch16-224-in21k)            | ❌ No        | Linear probing | 87.46 | 98.00 | 99.50 | 87.52     | 87.49  | 87.46 |
+| ViT (Fine-tuned vit-base-patch16-224-in21k) | ✅ Yes       | Linear probing | 97.29 | 99.75 | 99.92 | 97.44     | 97.38  | 97.35 |
+| DINOv2 (Fine-tuned w/ BigEarthNet-S2)       | ✅ Yes       | Linear probing | TBD   |       |       |           |        |       |
+| Resnet50 (linearprobe on mask)              | ❌ No        | Linear probing | 89.54 | 98.42 | 99.42 | 89.69     | 89.67  | 89.65 |
+| Resnet50 (finetune on mask)                 | ✅ Yes       | Linear probing | 97.04 | 99.71 | 99.92 | 97.09     | 97.09  | 97.08 |
 
 > ⚠️ TODO: Replace TBD with final experimental results
 
