@@ -151,6 +151,23 @@ project/
 >> python ad_eval.py # Generate Adversarial Image Instances
 ```
 
+```bash
+# Resnet-50 (mask dataset)
+>> cd utils
+# step 1: generate mask dataset
+# install sam2 from https://github.com/facebookresearch/sam2.git
+>> python gen_mask.py Aerial_dataset
+# the line above produce a new file Aerial_Landscapes_Masks
+# step 2: model on mask dataset
+>> cd ..
+>> cd modles
+# For linear-probing
+>> python resnet50_linearprobe_on_mask.py --data_dir ../data/Aerial_Landscapes_Masks --epochs 10 --batch_size 256 --lr 0.0001
+# For fully fine-tune
+>> python resnet50_fine_tune_linearprobe_on_mask.py --data_dir ../data/Aerial_Landscapes_Masks --epochs 10 --batch_size 256 --lr 0.0001
+# You can modify the command-line arguments to experiment with different model hyperparameters.
+```
+
 > ⚠️ TODO: Add running code
 
 ---
