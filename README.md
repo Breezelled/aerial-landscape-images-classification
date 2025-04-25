@@ -117,6 +117,38 @@ project/
 ### ⚙️ How to Run
 
 ```bash
+# ViT and Adversarial
+>> cd vit
+# Change the parameter at the bottom of train.py
+#    train_model(model_type='ViT',
+#                image_dir="./Aerial_Landscapes_Adv", # training dataset path
+#                save_path="./save", # save pt files
+#                train_type='frozen', # frozen or all
+#                weight_path=None, # load pre-trained weight
+#                batch_size=16,
+#                epochs=60,
+#                save_per_epoch=2)
+>> python train.py #Train ViT Model
+# Change the parameter at the bottom of evaluate.py
+#    get_attention( #
+#        model_type='ViT',
+#        saved_path1=saved_path1, # load model1 from saved_path1
+#        saved_path2=saved_path2, # load model2 from saved_path2
+#        model1_name=model_name1,
+#        model2_name=model_name2,
+#        epoch1=epoch1, # choose the epoch1.pt for model1
+#        epoch2=epoch2, # choose the epoch2.pt for model2
+#        image_dir1="./Aerial_Landscapes", # choose the test dataset1 for model1
+#        image_dir2="./Aerial_Landscapes", # choose the test dataset2 for model2
+#        image_name1='Original',
+#        image_name2='Original',
+#        ex_name='final',
+#        batch_size=16,
+#        heatmap=True) # whether to generate the heatmap
+>> python evaluate.py # Evaluate ViT Model
+# Just run the ad_train.py and ad_eval.py, all the parameters have been set. 
+>> python ad_train.py # Train Adversarial Model
+>> python ad_eval.py # Generate Adversarial Image Instances
 ```
 
 > ⚠️ TODO: Add running code
