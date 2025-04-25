@@ -10,7 +10,7 @@ Including:
 - **ViT**
 - **Zero-shot classification using CLIP**, which aligns images and natural language prompts.
 - **CLIP fine-tuning using RSICD**, a captioned remote sensing dataset, to enhance domain alignment.
-- **Linear probing with DINOv2 and BigEarthNet-pretrained ViT**, to assess feature quality for remote sensing imagery.
+- **Linear probing with DINOv2 and TorchGEO-pretrained ViT**, to assess feature quality for remote sensing imagery.
 
 All experiments are built around the SkyView dataset, and results from this section contribute to the overall understanding of advanced methods in remote sensing scene classification.
 
