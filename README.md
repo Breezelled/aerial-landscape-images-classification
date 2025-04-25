@@ -160,7 +160,7 @@ project/
 # the line above produce a new file Aerial_Landscapes_Masks
 # step 2: model on mask dataset
 >> cd ..
->> cd modles
+>> cd models
 # For linear-probing
 >> python resnet50_linearprobe_on_mask.py --data_dir ../data/Aerial_Landscapes_Masks --epochs 10 --batch_size 256 --lr 0.0001
 # For fully fine-tune
