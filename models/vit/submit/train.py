@@ -5,6 +5,7 @@ import torch.nn as nn
 from model import ViTForImageClassification
 from dataset import get_data_loader
 
+
 def train_model(model_type='ViT',
                 image_dir="./Aerial_Landscapes",
                 save_path="./save",
@@ -25,7 +26,7 @@ def train_model(model_type='ViT',
         image_std = model.feature_extractor.image_std
     else:
         raise ValueError('model_type')
-        
+
     if 'all' in train_type.lower():
         pass
     elif 'frozen' in train_type.lower():
@@ -59,11 +60,11 @@ def train_model(model_type='ViT',
     val_losses = []
     for epoch in range(epochs):
         total_loss = 0.0
-        for i, (images, labels,_) in enumerate(train_loader):
+        for i, (images, labels, _) in enumerate(train_loader):
             images = images.to(device)
             labels = labels.to(device)
 
-            predicts,_ = model(images)
+            predicts, _ = model(images)
             loss = criterion(predicts, labels)
 
             optimizer.zero_grad()
@@ -72,26 +73,26 @@ def train_model(model_type='ViT',
 
             total_loss += loss.item()
 
-            if (i+1) % 10 == 0:
-                print(f"Epoch {epoch+1}, Step {i+1}/{len(train_loader)}, Batch Loss: {loss.item():.4f}")
+            if (i + 1) % 10 == 0:
+                print(f"Epoch {epoch + 1}, Step {i + 1}/{len(train_loader)}, Batch Loss: {loss.item():.4f}")
 
-        train_losses.append(total_loss/len(train_loader))
-        print(f"Epoch {epoch+1}/{epochs}, Avg Loss: {total_loss/len(train_loader):.4f}")
+        train_losses.append(total_loss / len(train_loader))
+        print(f"Epoch {epoch + 1}/{epochs}, Avg Loss: {total_loss / len(train_loader):.4f}")
 
         # Validation
         model.eval()
         val_loss = 0.0
-        for i, (images, labels,_) in enumerate(test_loader):
+        for i, (images, labels, _) in enumerate(test_loader):
             images = images.to(device)
             labels = labels.to(device)
 
-            predicts,_ = model(images)
+            predicts, _ = model(images)
             loss = criterion(predicts, labels)
 
             val_loss += loss.item()
-        val_losses.append(val_loss/len(test_loader))
+        val_losses.append(val_loss / len(test_loader))
 
-        if (epoch+1) % save_per_epoch == 0:
+        if (epoch + 1) % save_per_epoch == 0:
             # Save Checkpoint
             checkpoint = {
                 'epoch': epoch + 1,
@@ -99,8 +100,8 @@ def train_model(model_type='ViT',
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': total_loss / len(train_loader)
             }
-            torch.save(checkpoint, f"{save_path}/{model_type}_{train_type}/{epoch+1}.pth" )
-            print(f"Checkpoint saved at {save_path}/{model_type}_{train_type}/{epoch+1}.pth")
+            torch.save(checkpoint, f"{save_path}/{model_type}_{train_type}/{epoch + 1}.pth")
+            print(f"Checkpoint saved at {save_path}/{model_type}_{train_type}/{epoch + 1}.pth")
 
     loss_df = pd.DataFrame({
         'train_loss': train_losses,
@@ -109,24 +110,51 @@ def train_model(model_type='ViT',
 
     loss_df.to_csv(f"{save_path}/{model_type}_{train_type}/losses.csv", index=False)
 
+
 # adv is 15
 if __name__ == "__main__":
     train_model(model_type='ViT',
-                image_dir="./Aerial_Landscapes_Adv",
+                image_dir="./Aerial_Landscapes",
                 save_path="./save",
-                train_type='frozen_OA',
-                weight_path='./save/ViT_frozen/60.pth',
+                train_type='all',
+                weight_path=None,
+                batch_size=16,
+                epochs=20,
+                save_per_epoch=2)
+    train_model(model_type='ViT',
+                image_dir="./Aerial_Landscapes",
+                save_path="./save",
+                train_type='frozen',
+                weight_path=None,
                 batch_size=16,
                 epochs=60,
-                save_per_epoch=5)
-    # train_model(model_type='ViT',
-    #             image_dir="./Aerial_Landscapes_Adv",
-    #             save_path="./save",
-    #             train_type='all_OA',
-    #             weight_path='./save/ViT_all/20.pth',
-    #             batch_size=16,
-    #             epochs=5,
-    #             save_per_epoch=1)
+                save_per_epoch=2)
+
+    train_model(model_type='ViT',
+                image_dir="./Aerial_Landscapes_Adv",
+                save_path="./save",
+                train_type='all_A',
+                weight_path='./save/ViT_all/20.pth',
+                batch_size=16,
+                epochs=3,
+                save_per_epoch=2)
+    train_model(model_type='ViT',
+                image_dir="./Aerial_Landscapes_Adv",
+                save_path="./save",
+                train_type='./save/ViT_frozen/60.pth',
+                weight_path=None,
+                batch_size=16,
+                epochs=60,
+                save_per_epoch=2)
+
+    train_model(model_type='ViT',
+                image_dir="./Aerial_Landscapes_Adv",
+                save_path="./save",
+                train_type='all_A',
+                weight_path=None,
+                batch_size=16,
+                epochs=3,
+                save_per_epoch=2)
     train_model(model_type='ViT',
                 image_dir="./Aerial_Landscapes_Adv",
                 save_path="./save",
@@ -134,12 +162,4 @@ if __name__ == "__main__":
                 weight_path=None,
                 batch_size=16,
                 epochs=60,
-                save_per_epoch=5)
-    # train_model(model_type='ViT',
-    #             image_dir="./Aerial_Landscapes_Adv",
-    #             save_path="./save",
-    #             train_type='all_A',
-    #             weight_path=None,
-    #             batch_size=16,
-    #             epochs=10,
-    #             save_per_epoch=1)
+                save_per_epoch=2)

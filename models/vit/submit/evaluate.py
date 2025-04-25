@@ -7,15 +7,17 @@ from dataset import get_data_loader
 import cv2
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix, precision_score, recall_score
+from sklearn.metrics import accuracy_score, classification_report, f1_score, confusion_matrix, precision_score, \
+    recall_score
+
 
 def evaluate(y_test, scores, predicts, text=''):
     print('=========================================================')
     print(f'{text} performance:')
     accuracy = accuracy_score(y_test, predicts)
-    acc1 = top_k_accuracy(y_test,scores,1)
-    acc3 = top_k_accuracy(y_test,scores,3)
-    acc5 = top_k_accuracy(y_test,scores,5)
+    acc1 = top_k_accuracy(y_test, scores, 1)
+    acc3 = top_k_accuracy(y_test, scores, 3)
+    acc5 = top_k_accuracy(y_test, scores, 5)
     precision = precision_score(y_test, predicts, average='macro')
     recall = recall_score(y_test, predicts, average='macro')
     f1 = f1_score(y_test, predicts, average='macro')
@@ -30,6 +32,7 @@ def evaluate(y_test, scores, predicts, text=''):
     print(classification_report(y_test, predicts))
     print('=========================================================')
 
+
 def top_k_accuracy(y_true, y_scores, k=1):
     top_k_preds = np.argsort(y_scores, axis=1)[:, -k:]
     correct = 0
@@ -37,6 +40,7 @@ def top_k_accuracy(y_true, y_scores, k=1):
         if true in topk:
             correct += 1
     return correct / len(y_true)
+
 
 def draw_confusion_matrix(y_true, y_pred, save_dir, title=''):
     labels = sorted(list(set(y_true) | set(y_pred)))
@@ -47,6 +51,7 @@ def draw_confusion_matrix(y_true, y_pred, save_dir, title=''):
     plt.xlabel('Predicted Labels')
     plt.ylabel('True Labels')
     plt.savefig(os.path.join(save_dir, f'{title}_Confusion.png'))
+
 
 def get_attention(
         model_type='ViT',
@@ -86,16 +91,18 @@ def get_attention(
 
     # Load Dataset
     train_loader1, val_loader1, test_loader1 = get_data_loader(image_dir=image_dir1,
-                                                            image_size=image_size,
-                                                            expected_mean=image_mean,
-                                                            expected_std=image_std,
-                                                            batch_size=batch_size)
-    
+                                                               image_size=image_size,
+                                                               expected_mean=image_mean,
+                                                               expected_std=image_std,
+                                                               batch_size=batch_size,
+                                                               only_test=True)
+
     train_loader2, val_loader2, test_loader2 = get_data_loader(image_dir=image_dir2,
-                                                            image_size=image_size,
-                                                            expected_mean=image_mean,
-                                                            expected_std=image_std,
-                                                            batch_size=batch_size)
+                                                               image_size=image_size,
+                                                               expected_mean=image_mean,
+                                                               expected_std=image_std,
+                                                               batch_size=batch_size,
+                                                               only_test=True)
 
     # Mkdir
     if heatmap == True:
@@ -113,11 +120,11 @@ def get_attention(
     predicts2 = []
     score_list1 = []
     score_list2 = []
-    
+
     true_labels1 = []
     true_labels2 = []
-    
-    for i, ((images1, labels1, paths1), (images2, labels2, paths2)) in enumerate(zip(test_loader1,test_loader2)):
+
+    for i, ((images1, labels1, paths1), (images2, labels2, paths2)) in enumerate(zip(test_loader1, test_loader2)):
         # print(i, len(test_loader))
 
         with torch.no_grad():
@@ -134,15 +141,16 @@ def get_attention(
             avg_attentions1 = attentions1[-1].mean(1)
             avg_attentions2 = attentions2[-1].mean(1)
 
-            for pred_class1, pred_class2, label1, label2, avg_attention1, avg_attention2, image1, image2, path1,path2, score1, score2 in zip(preds_class1,
-                                                                                                    preds_class2,
-                                                                                                    labels1,
-                                                                                                    labels2,
-                                                                                                    avg_attentions1,
-                                                                                                    avg_attentions2,
-                                                                                                    images1, images2,
-                                                                                                    paths1,paths2,
-                                                                                                    scores1,scores2):
+            for pred_class1, pred_class2, label1, label2, avg_attention1, avg_attention2, image1, image2, path1, path2, score1, score2 in zip(
+                    preds_class1,
+                    preds_class2,
+                    labels1,
+                    labels2,
+                    avg_attentions1,
+                    avg_attentions2,
+                    images1, images2,
+                    paths1, paths2,
+                    scores1, scores2):
                 true_labels1.append(label1.item())
                 true_labels2.append(label2.item())
                 predicts1.append(pred_class1.item())
@@ -150,13 +158,16 @@ def get_attention(
 
                 score_list1.append(score1.cpu().numpy())
                 score_list2.append(score2.cpu().numpy())
-                
+
                 if heatmap == False:
                     continue
-                if label1 == pred_class1 and label2 == pred_class2 and f'{label1}_{pred_class1}' in saved_img_dict1 and f'{label2}_{pred_class2}' in saved_img_dict2:
+                if (label1 == pred_class1 and label2 == pred_class2) or (
+                        label1 != pred_class1 and label2 != pred_class2) or (
+                        f'{label1}_{pred_class1}' in saved_img_dict1 and f'{label2}_{pred_class2}' in saved_img_dict2):
                     continue
                 cls_attention1 = avg_attention1[0, 1:]
                 cls_attention2 = avg_attention2[0, 1:]
+                print(path1, path2)
 
                 # reshape
                 heat_map1 = cls_attention1.reshape(14, 14).cpu().numpy()
@@ -188,20 +199,20 @@ def get_attention(
 
                 saved_img_dict1[f'{label1}_{pred_class1}'] = True
                 saved_img_dict2[f'{label2}_{pred_class2}'] = True
-                print(len(saved_img_dict1),len(saved_img_dict2))
-                if len(saved_img_dict1)>20 and len(saved_img_dict2)>20:
-                    heatmap=False
+                print(len(saved_img_dict1), len(saved_img_dict2))
+                if len(saved_img_dict1) > 20 or len(saved_img_dict2) > 20:
+                    heatmap = False
 
     evaluate(true_labels1, score_list1, predicts1, f'model:{model1_name}, image:{image_name1}, epoch:{epoch1}\n')
     draw_confusion_matrix(true_labels1, predicts1, save_dir=saved_path1, title=f"epoch{epoch1}_{image_name1}")
-    
+
     evaluate(true_labels2, score_list2, predicts2, f'model:{model2_name}, image:{image_name2}, epoch:{epoch2}\n')
     draw_confusion_matrix(true_labels2, predicts2, save_dir=saved_path2, title=f"epoch{epoch2}_{image_name2}")
 
 
 if __name__ == '__main__':
-    epoch1 = 10
-    epoch2 = 10    
+    # epoch1 = 10
+    # epoch2 = 10
     saved_path = './save/ViT_frozen_O'
     model_name = 'ViT_frozen_O'
     # get_attention(
@@ -235,23 +246,24 @@ if __name__ == '__main__':
     #     batch_size=16,
     #     heatmap=False)
 
-    
-    saved_path1 = './save/ViT_frozen'
-    model_name1 = 'ViT_frozen_O'
-    saved_path2 = './save/ViT_all'
-    model_name2 = 'ViT_all_O'
+    epoch1 = 20
+    epoch2 = 60
+    saved_path1 = './save/ViT_all'
+    model_name1 = 'ViT_all_O'
+    saved_path2 = './save/ViT_frozen'
+    model_name2 = 'ViT_frozen_O'
     get_attention(
         model_type='ViT',
         saved_path1=saved_path1,
         saved_path2=saved_path2,
-        model1_name= model_name1,
-        model2_name= model_name2,
+        model1_name=model_name1,
+        model2_name=model_name2,
         epoch1=epoch1,
         epoch2=epoch2,
         image_dir1="./Aerial_Landscapes",
         image_dir2="./Aerial_Landscapes",
         image_name1='Original',
         image_name2='Original',
-        ex_name='None',
+        ex_name='final',
         batch_size=16,
-        heatmap=False)
+        heatmap=True)

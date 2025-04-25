@@ -26,7 +26,7 @@ class TrainableBlackDotAttacker(nn.Module):
         return x_adv, self.delta
 
 attacker = TrainableBlackDotAttacker(epsilon=epsilon).to(device)
-attacker.load_state_dict(torch.load('./adversarial/attacker_15.pth', map_location=device))
+attacker.load_state_dict(torch.load('attacker_15.pth', map_location=device))
 attacker.eval()
 
 resize_transform = transforms.Resize((224, 224))
