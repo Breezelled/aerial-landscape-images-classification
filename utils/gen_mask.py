@@ -94,7 +94,7 @@ mask_generator = SAM2AutomaticMaskGenerator(sam2)
 
 # 设置路径
 input_root = "Aerial_Landscapes"
-output_root = "second_masks"
+output_root = "Aerial_Landscapes_Masks"
 
 subfolder = sys.argv[1]  # 运行时传入子目录名
 
